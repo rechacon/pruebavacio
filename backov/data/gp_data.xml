@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<data noupdate="0">
+		<record id="gp_partner" model="gp">
+	        <field name="name">Conexión clientes</field>
+	        <field name="type_gp">partner</field>
+	    </record>
+	    <record id="gp_invoice" model="gp">
+	        <field name="name">Conexión facturas</field>
+	        <field name="type_gp">invoice</field>
+	    </record>
+	    <record id="gp_proforma" model="gp">
+	        <field name="name">Conexión proformas</field>
+	        <field name="type_gp">proforma</field>
+	    </record>
+	    <record id="gp_credit_note" model="gp">
+	        <field name="name">Conexión notas de crédito</field>
+	        <field name="type_gp">credit_note</field>
+	    </record>
+	    <record id="gp_contract_account" model="gp">
+	        <field name="name">Conexión cuentas contrato</field>
+	        <field name="type_gp">contract_account</field>
+	    </record>
+	    <record id="gp_debt" model="gp">
+	        <field name="name">Conexión deudas</field>
+	        <field name="type_gp">debt</field>
+	    </record>
+	</data>
+	<data noupdate="0">
+		<record id="product_test" model="product.template">
+            <field name="name">Producto de prueba</field>
+            <field name="type">service</field>
+        </record>
+	</data>
+</odoo>

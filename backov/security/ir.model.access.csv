@@ -1,0 +1,7 @@
+"id","name","model_id:id","group_id:id","perm_read","perm_write","perm_create","perm_unlink"
+"access_gp","gp","model_gp","base.group_user",1,1,1,1
+"access_gp_log","gp.log","model_gp_log","base.group_user",1,1,1,1
+"access_account_contract","account.contract","model_account_contract","base.group_user",1,1,1,1
+"access_account_contract","account.contract","model_account_contract","base.group_user",1,1,1,1
+"access_res_partner_cnae","res.partner.cnae","model_res_partner_cnae","base.group_user",1,1,1,1
+"access_account_debit","account.debit","model_account_debit","base.group_user",1,1,1,1

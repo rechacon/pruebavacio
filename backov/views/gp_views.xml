@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+	<record model="ir.ui.view" id="gp_form">
+	    <field name="name">gp.form</field>
+	    <field name="model">gp</field>
+	    <field name="arch" type="xml">
+	        <form string="Conexión GP" create="0" delete="0">
+            	<header>
+            		<button name="connect_gp" type="object" string="Actualizar registros" class="btn-primary" icon="fa-download"/>
+            	</header>
+	            <sheet>
+                	<div class="oe_title">
+		                <h1>
+		                    <field name="name" required="1"/>
+		                </h1>
+		            </div>
+	                <group>
+	                    <field name="type_gp" required="1"/>
+	                </group>
+	                <separator string="Logs" colspan="4"/>
+                    <field name="gp_log_ids" colspan="4" nolabel="1">
+                    	<tree create="0" delete="0" editable="top" default_order="create_date">
+		                    <field name="name" readonly="1"/>
+		                    <field name="qty" readonly="1"/>
+		                    <field name="create_date" string="Fecha" readonly="1"/>
+                    	</tree>
+                    </field>
+	            </sheet>
+	        </form>
+	    </field>
+	</record>
+	<record model="ir.ui.view" id="gp_tree">
+	    <field name="name">gp.tree</field>
+	    <field name="model">gp</field>
+	    <field name="arch" type="xml">
+	        <tree string="Conexión GP" create="0" delete="0">
+	            <field name="name"/>
+	            <field name="type_gp"/>
+	        </tree>
+	    </field>
+	</record>
+	<record id="action_gp" model="ir.actions.act_window">
+		<field name="name">Conexión GP</field>
+		<field name="res_model">gp</field>
+		<field name="view_mode">tree,form</field>
+	</record>
+	<menuitem id="gp_menu"
+			  name="Conexión GP"
+			  parent="base.menu_administration"
+			  action="action_gp"
+			  sequence="50"
+	/>
+</odoo>

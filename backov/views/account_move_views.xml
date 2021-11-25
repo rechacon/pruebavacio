@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_account_invoice_inherit_form" model="ir.ui.view">
+        <field name="name">account.inherit.invoice.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <header position="inside">
+                <button name="print_invoice_ov" type="object" string="Imprimir reporte OV" class="btn-primary"/>
+            </header>
+            <xpath expr="//label[@for='journal_id']" position="before">
+                <field name="period"/>
+                <field name="contract"/>
+            </xpath>
+            <field name="payment_reference" position="after">
+                <field name="use" attrs="{'invisible': [('move_type', '!=', 'out_refund')]}"/>
+                <field name="description" attrs="{'invisible': [('move_type', '!=', 'out_refund')]}"/>
+            </field>
+        </field>
+    </record>
+    <record id="force_unlink_move" model="ir.actions.server">
+        <field name="name">Forzar Suprimir</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="state">code</field>
+        <field name="code">records.force_unlink_move()
+        </field>
+        <field name="sequence" eval="20"/>
+    </record>
+    <record id="account.action_move_out_invoice_type" model="ir.actions.act_window">
+        <field name="domain">[('move_type', '=', 'out_invoice'), ('proforma', '!=', True)]</field>
+    </record>
+    <record id="action_move_out_invoice_proforma_type" model="ir.actions.act_window">
+        <field name="name">Proformas</field>
+        <field name="res_model">account.move</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_id" ref="account.view_out_invoice_tree"/>
+        <field name="search_view_id" ref="account.view_account_invoice_filter"/>
+        <field name="domain">[('move_type', '=', 'out_invoice'), ('proforma', '=', True)]</field>
+        <field name="context">{'default_move_type': 'out_invoice'}</field>
+        <field name="help" type="html">
+          <p class="o_view_nocontent_smiling_face">
+            Crear proformas
+          </p>
+        </field>
+    </record>
+    <record id="get_list_invoice" model="ir.actions.server">
+        <field name="name">Obtener listado de facturas</field>
+        <field name="model_id" ref="account.model_account_move"/>
+        <field name="binding_model_id" ref="account.model_account_move"/>
+        <field name="state">code</field>
+        <field name="code">records.connect_gp()</field>
+        <field name="sequence" eval="20"/>
+    </record>
+    <record model="ir.ui.view" id="contract_form">
+        <field name="name">contract.form</field>
+        <field name="model">account.contract</field>
+        <field name="arch" type="xml">
+            <form string="Cuenta contrato">
+                <sheet>
+                    <group col="4" colspan="2">
+                        <field name="name"/>
+                        <field name="cnae_id"/>
+                        <field name="partner_id"/>
+                        <field name="debit_invoice"/>
+                        <field name="debit_proforma"/>
+                        <field name="debit_partner"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record model="ir.ui.view" id="contract_tree">
+        <field name="name">contract.tree</field>
+        <field name="model">account.contract</field>
+        <field name="arch" type="xml">
+            <tree string="Cuenta contrato">
+                <field name="name" optional="show"/>
+                <field name="partner_id" optional="show"/>
+                <field name="cnae_id" optional="show"/>
+                <field name="debit_invoice" optional="show"/>
+                <field name="debit_proforma" optional="show"/>
+                <field name="debit_partner" optional="show"/>
+            </tree>
+        </field>
+    </record>
+    <record id="action_contract" model="ir.actions.act_window">
+        <field name="name">Cuentas contrato</field>
+        <field name="res_model">account.contract</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+    <record model="ir.ui.view" id="debit_tree">
+        <field name="name">account.debit.tree</field>
+        <field name="model">account.debit</field>
+        <field name="arch" type="xml">
+            <tree string="Deuda" editable="top">
+                <field name="partner_id" optional="show"/>
+                <field name="debit_invoice" optional="show"/>
+                <field name="debit_proforma" optional="show"/>
+                <field name="debit_partner" optional="show"/>
+            </tree>
+        </field>
+    </record>
+    <record id="action_debit" model="ir.actions.act_window">
+        <field name="name">Deudas</field>
+        <field name="res_model">account.debit</field>
+        <field name="view_mode">tree</field>
+    </record>
+    <menuitem id="menu_action_move_out_invoice_proforma_type" action="action_move_out_invoice_proforma_type" sequence="1" parent="account.menu_finance_receivables" name="Proformas"/>
+    <menuitem id="menu_action_account_contract" action="action_contract" sequence="2" parent="account.menu_finance_receivables" name="Cuentas contrato"/>
+    <menuitem id="menu_action_account_debit" action="action_debit" sequence="3" parent="account.menu_finance_receivables" name="Deudas"/>
+</odoo>
