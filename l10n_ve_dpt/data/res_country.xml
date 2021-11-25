@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<odoo>
+    <function name="write" model="ir.model.data">
+        <function name="search" model="ir.model.data">
+            <value eval="[('module', '=', 'base'), ('name', '=', 've')]"/>
+        </function>
+        <value eval="{'noupdate': False}"/>
+    </function>
+	<record id="base.ve" model="res.country">
+        <field name="address_view_id" ref="l10n_ve_dpt.ve_partner_address_form"/>
+    </record>
+</odoo>

@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<odoo>
+
+    <record id="view_state_filter" model="ir.ui.view">
+        <field name="name">res.country.state.filter</field>
+        <field name="model">res.country.state</field>
+        <field name="arch" type="xml">
+        <search>
+            <field name="name"/>
+            <field name="code"/>
+            <filter name="Venezuela" domain="[('country_id.name','=','Venezuela')]"/>
+        </search>
+        </field>
+    </record>
+
+    <record id="action_state" model="ir.actions.act_window">
+        <field name="name">State</field>
+        <field name="res_model">res.country.state</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{"search_default_Venezuela":1}</field>
+    </record>
+
+    <record id="view_municipality_form" model="ir.ui.view">
+        <field name="name">res.country.state.municipality.form</field>
+        <field name="model">res.country.state.municipality</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="Municipality">
+            <group col="4" colspan="2">
+                <field name="code"/>
+                <field name="name"/>
+                <separator string="Parishes in this municipality"/>
+                <field name="parish_ids" nolabel="1" colspan="4"/>
+            </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_municipality_tree" model="ir.ui.view">
+        <field name="name">res.country.state.municipality.tree</field>
+        <field name="model">res.country.state.municipality</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <tree string="Municipality">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="state_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_municipality" model="ir.actions.act_window">
+        <field name="name">Municipality</field>
+        <field name="res_model">res.country.state.municipality</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+
+    <record id="view_parish_form" model="ir.ui.view">
+        <field name="name">res.country.state.municipality.parish.form</field>
+        <field name="model">res.country.state.municipality.parish</field>
+        <field name="type">form</field>
+        <field name="arch" type="xml">
+            <form string="Parish">
+            <group col="4" colspan="2">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="municipality_id"/>
+            </group>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_parish_tree" model="ir.ui.view">
+        <field name="name">res.country.state.municipality.parish.tree</field>
+        <field name="model">res.country.state.municipality.parish</field>
+        <field name="type">tree</field>
+        <field name="arch" type="xml">
+            <tree string="Parish">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="municipality_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_parish" model="ir.actions.act_window">
+        <field name="name">Parish</field>
+        <field name="res_model">res.country.state.municipality.parish</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem name="Municipalities"
+              sequence="3"
+              action="action_municipality"
+              id="menu_municipality_group"
+              parent="contacts.menu_localisation"/>
+    <menuitem name="Parishes"
+              sequence="4"
+              action="action_parish"
+              id="menu_parish_group"
+              parent="contacts.menu_localisation"/>
+
+    <!-- Al menú de "Grupo de países" se le cambia la secuencia para que corregimientos y distritos encajen en la secuencia del DPT -->
+    <record id="contacts.menu_country_group" model="ir.ui.menu">
+        <field name="sequence" eval="5"/>
+    </record>
+
+</odoo>
