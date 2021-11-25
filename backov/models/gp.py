@@ -92,7 +92,8 @@ class GP(models.Model):
             --WHERE SOP1.CUSTNMBR = 'J000202001' AND SOP1.VOIDSTTS = 0 AND SOP1.SOPTYPE = 2 AND SOP16.SOPTYPE = 2 AND CM.INACTIVE = 0 AND CM.HOLD = 0 AND SOP1.SOPNUMBE NOT IN(SELECT SOPNUMBE FROM [dbo].[SOP10104] SOP14 WHERE SOP14.SOPTYPE = 2 AND SOPNUMBE = SOP1.SOPNUMBE AND SOP14.DELETE1 = 0)
             --WHERE SOP1.CUSTNMBR = 'J000202001'
             ORDER BY SOP1.DOCDATE DESC
-            OFFSET 0 ROWS FETCH NEXT 50 ROWS ONLY;"""
+            --OFFSET 0 ROWS FETCH NEXT 50 ROWS ONLY
+            ;"""
 
     def sql_credit_note(self):
         """Consulta de listado de notas de crédito"""
@@ -114,7 +115,8 @@ class GP(models.Model):
           --WHERE SOP3.CUSTNMBR = 'J000202001' AND SOP3.SOPTYPE = 4 AND SOP1.SOPTYPE = 4
           --AND (RTRIM(SOP3.COMMNTID) != RTRIM(SOP1.COMMENT_1)) AND CM.INACTIVE = 0 AND CM.HOLD = 0
           ORDER BY SOP3.DOCDATE DESC
-          OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY;"""
+          --OFFSET 0 ROWS FETCH NEXT 10 ROWS ONLY
+          ;"""
 
     def sql_contract_account(self, vat):
         """Consulta de listado de cuentas contratos"""
