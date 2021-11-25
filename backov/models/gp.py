@@ -180,13 +180,13 @@ class GP(models.Model):
         """Conexión con GP"""
         try:
             bd_ids = {
-                # 'baruta': 'F2099',
-                # 'chacao': 'F5618',
-                # 'hatillo': 'F0004',
-                # 'iribarren': 'F0006',
+                'baruta': 'F2099',
+                'chacao': 'F5618',
+                'hatillo': 'F0004',
+                'iribarren': 'F0006',
                 'maneiro': 'F1099',
-                # 'jimenez': 'F0009',
-                # 'san_diego': 'S6759',
+                'jimenez': 'F0009',
+                'san_diego': 'S6759',
             }
             total = 0
             for bd in bd_ids:
