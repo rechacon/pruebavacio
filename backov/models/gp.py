@@ -69,7 +69,7 @@ class GP(models.Model):
           INNER JOIN [dbo].[SOP10106] SOP1 ON SOP1.SOPNUMBE = RM.DOCNUMBR
       INNER JOIN [dbo].[SOP30200] SOP32 ON SOP32.SOPNUMBE = SOP1.SOPNUMBE
           INNER JOIN [dbo].[RM00101] CM ON CM.CUSTNMBR = RM.CUSTNMBR
-          WHERE RM.CUSTNMBR = 'J000202001' AND RM.RMDTYPAL = 1 AND RM.VOIDSTTS = 0 AND RM.DOCNUMBR LIKE '10%' AND SOP1.SOPTYPE = 3 AND SOP32.SOPTYPE = 3 AND CM.INACTIVE = 0 AND CM.HOLD = 0
+          --WHERE RM.CUSTNMBR = 'J000202001' AND RM.RMDTYPAL = 1 AND RM.VOIDSTTS = 0 AND RM.DOCNUMBR LIKE '10%' AND SOP1.SOPTYPE = 3 AND SOP32.SOPTYPE = 3 AND CM.INACTIVE = 0 AND CM.HOLD = 0
           ORDER BY RM.CURTRXAM DESC;"""
 
     def sql_proforma(self):
@@ -286,8 +286,8 @@ class GP(models.Model):
         elif bd == 'san_diego':
             municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_CAR_SAD', raise_if_not_found=False)
         _logger.info(f'\n{data}\n')
-        name = re.sub(r"[^\sa-zA-Z0-9.-]", "", data[2].strip().upper())
-        company_name = re.sub(r"[^\sa-zA-Z0-9.-]", "", data[1].strip().upper())
+        name = re.sub(r"[^\sa-zA-Z0-9.-]", "", data[1].strip().upper())
+        company_name = re.sub(r"[^\sa-zA-Z0-9.-]", "", data[2].strip().upper())
         # municipality_id = data[6]
         phone = data[7].strip()
         mobile = data[8].strip()
@@ -357,36 +357,37 @@ class GP(models.Model):
             period = data[7]
             pending = data[4]
             journal_id = self.env['account.journal'].search([('type', '=', 'bank')], limit=1)
-            move_id = self.env['account.move'].create({
-                'name': numero_documento,
-                'partner_id': partner_id.id,
-                'move_type': 'out_invoice',
-                'invoice_date': invoice_date,
-                'numero_documento': numero_documento,
-                'invoice_date_due': invoice_date_due,
-                'contract': contract,
-                'period': period,
-                # 'payment_id': payment_id.id,
-                'invoice_line_ids': [(0, 0, {
-                    'product_id': self.env.ref('backov.product_test').id,
-                    'price_unit': amount,
-                    # 'tax_ids': [(4, self.env.ref('l10n_es.account_tax_template_s_iva21s').id)],
-                    'tax_ids': False,
-                })]
-            })
-            move_id.action_post()
-            # payment_id.action_post()
-            move_id.name = numero_documento
-            # move_id.payment_id = payment_id.id
-            print(f'\n\nP: {pending}\n\n')
-            payment_id = self.env['account.payment.register'].with_context(active_ids=[move_id.id], active_model='account.move').create({
-                'journal_id': journal_id.id,
-                'amount': amount if pending == 0.0 else pending,
-                'payment_difference_handling': 'reconcile' if pending == 0.0 else 'open',
-                'payment_date': invoice_date,
-                'communication': numero_documento,
-                # 'dont_redirect_to_payments': True,
-            }).action_create_payments()
+            move_id = self.env['account.move']
+            if not move_id.search([('name', '=', numero_documento)]):
+                move_id = move_id.create({
+                    'name': numero_documento,
+                    'partner_id': partner_id.id,
+                    'move_type': 'out_invoice',
+                    'invoice_date': invoice_date,
+                    'numero_documento': numero_documento,
+                    'invoice_date_due': invoice_date_due,
+                    'contract': contract,
+                    'period': period,
+                    # 'payment_id': payment_id.id,
+                    'invoice_line_ids': [(0, 0, {
+                        'product_id': self.env.ref('backov.product_test').id,
+                        'price_unit': amount,
+                        # 'tax_ids': [(4, self.env.ref('l10n_es.account_tax_template_s_iva21s').id)],
+                        'tax_ids': False,
+                    })]
+                })
+                move_id.action_post()
+                move_id.name = numero_documento
+                payment_id = self.env['account.payment.register'].with_context(active_ids=[move_id.id], active_model='account.move').create({
+                    'journal_id': journal_id.id,
+                    'amount': amount if pending == 0.0 else pending,
+                    'payment_difference_handling': 'reconcile' if pending == 0.0 else 'open',
+                    'payment_date': invoice_date,
+                    'communication': numero_documento,
+                    # 'dont_redirect_to_payments': True,
+                }).action_create_payments()
+            else:
+                move_id = move_id.search([('name', '=', numero_documento)])
             if pending == 0.0:
                 move_id.payment_state = 'paid'
             else:
