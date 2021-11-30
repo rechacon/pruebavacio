@@ -5,3 +5,4 @@
 "access_account_contract","account.contract","model_account_contract","base.group_user",1,1,1,1
 "access_res_partner_cnae","res.partner.cnae","model_res_partner_cnae","base.group_user",1,1,1,1
 "access_account_debit","account.debit","model_account_debit","base.group_user",1,1,1,1
+"access_res_partner_stadistics","res.partner.stadistics","model_res_partner_stadistics","base.group_user",1,1,1,1

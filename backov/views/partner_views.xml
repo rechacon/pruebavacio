@@ -10,6 +10,13 @@
                     <field name="state" widget="statusbar"/>
                 </header>
             </sheet>
+            <div name="button_box" position="inside">
+                <button class="oe_stat_button" type="object" name="action_view_proformas" icon="fa-list">
+                    <field string="Proformas" name="count_proforma" widget="statinfo"/>
+                </button>
+                <button class="oe_stat_button" type="object" name="action_view_account_contract" icon="fa-list" string="Cuenta contrato">
+                </button>
+            </div>
         </field>
     </record>
     <record id="view_res_partner_filter" model="ir.ui.view">
@@ -31,6 +38,59 @@
         <field name="domain">[('parent_id', '!=', False)]</field>
         <field name="context">{'default_is_company': True}</field>
     </record>
+    <record model="ir.ui.view" id="res_partner_stadistics_form">
+        <field name="name">res.partner.stadistics.form</field>
+        <field name="model">res.partner.stadistics</field>
+        <field name="arch" type="xml">
+            <form string="Estadisticas">
+                <sheet>
+                    <h1><field name="name" readonly="1"/></h1>
+                    <group>
+                        <group>
+                            <separator string="Contactos"/>
+                            <field name="count_contact_total"/>
+                            <field name="count_contact_nice"/>
+                            <field name="count_contact_bad"/>
+                            <field name="count_contact_percentage" />
+                            <separator string="Otros datos"/>
+                            <field name="count_contact_inactive"/>
+                            <field name="count_contact_vat"/>
+                            <field name="count_contact_name"/>
+                            <field name="count_contact_none"/>
+                        </group>
+                        <group>
+                            <separator string="Sucursales"/>
+                            <field name="count_sucursal_total"/>
+                            <field name="count_sucursal_nice"/>
+                            <field name="count_sucursal_bad"/>
+                            <field name="count_sucursal_percentage"/>
+                            <separator string="Otros datos"/>
+                            <field name="count_sucursal_inactive"/>
+                            <field name="count_sucursal_vat"/>
+                            <field name="count_sucursal_name"/>
+                            <field name="count_sucursal_none"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record model="ir.ui.view" id="res_partner_stadistics_tree">
+        <field name="name">res.partner.stadistics.tree</field>
+        <field name="model">res.partner.stadistics</field>
+        <field name="arch" type="xml">
+            <tree string="Estadisticas">
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+    <record id="action_res_partner_stadistics" model="ir.actions.act_window">
+        <field name="name">Estadísticas</field>
+        <field name="res_model">res.partner.stadistics</field>
+        <field name="res_id" ref="backov.partner_stadistics"/>
+        <field name="view_mode">form,graph</field>
+    </record>
+
     <record id="contacts.res_partner_menu_contacts" model="ir.ui.menu">
         <field name="sequence" eval="1"/>
     </record>
@@ -66,6 +126,12 @@
         id="menu_contacts_cnae"
         sequence="3"
         action="backov.action_res_partner_cnae"
+        parent="contacts.menu_contacts"
+    />
+    <menuitem name="Estadísticas"
+        id="menu_res_partner_stadistics"
+        sequence="4"
+        action="backov.action_res_partner_stadistics"
         parent="contacts.menu_contacts"
     />
 </odoo>

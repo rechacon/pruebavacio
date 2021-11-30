@@ -168,8 +168,8 @@ class GP(models.Model):
     def credentials_sqlserver(self, bd):
         """Credenciales de SQL SERVER"""
         _logger.info(f'\n\n======\nBD: {bd}\n======\n\n')
-        # server = '10.161.0.32'
-        server = '190.93.46.77'
+        server = '10.161.0.32'
+        # server = '190.93.46.77'
         name_bd = bd
         user = 'consultorsql'
         passwd = 'Sql01*'
@@ -219,13 +219,23 @@ class GP(models.Model):
                 elif self.type_gp == 'credit_note':
                     cursor.execute(self.sql_credit_note())
                 elif self.type_gp == 'contract_account':
-                    partner_ids = self.env['res.partner'].search(['&', ('municipality_id', '=', municipality_id.id), ('parent_id', '!=', False)], limit=100)
-                    for partner in partner_ids:
+                    # partner_ids = self.env['res.partner'].search(['&', ('municipality_id', '=', municipality_id.id), ('parent_id', '!=', False)])
+                    self._cr.execute(f"""
+                        SELECT id, vat FROM res_partner
+                        WHERE municipality_id = {municipality_id.id} AND parent_id IS NOT NULL""")
+                    progress = 0
+                    for partner in self._cr.fetchall():
+                        partner = self.env['res.partner'].browse([partner[0]])
                         cursor.execute(self.sql_contract_account(partner.vat))
                         pre_tuple = cursor.fetchall()
                         if not pre_tuple == []:
-                            pre_tuple = [pre_tuple[0] + tuple(partner)]
-                            record_ids.extend(pre_tuple)
+                            pre_tuple = pre_tuple[0] + tuple(partner)
+                            self.create_contract_account(pre_tuple, municipality_id)
+                            # record_ids.extend(pre_tuple)
+                            progress += 1
+                            if progress == 100:
+                                self.env.cr.commit()
+                                progress = 0
                 elif self.type_gp == 'debt':
                     partner_ids = self.env['res.partner'].search([('parent_id', '!=', False)], limit=100)
                     for partner in partner_ids:
@@ -234,26 +244,28 @@ class GP(models.Model):
                         record_ids.extend(pre_tuple)
 
                 # Devolver consulta
+                if self.type_gp == 'contract_account':
+                    continue
                 progress = 0
                 for row in cursor.fetchall() or record_ids:
                     if self.type_gp == 'partner':
                         _logger.info('\nListado de Clientes\n')
-                        self.create_partner(row, bd)
+                        self.create_partner(row, municipality_id)
                     elif self.type_gp == 'invoice':
                         _logger.info('\nListado de Facturas\n')
-                        self.create_invoice(row, bd)
+                        self.create_invoice(row, municipality_id)
                     elif self.type_gp == 'proforma':
                         _logger.info('\nListado de Proformas\n')
-                        self.create_proforma(row, bd)
+                        self.create_proforma(row, municipality_id)
                     elif self.type_gp == 'credit_note':
                         _logger.info('\nListado de Notas de crédito\n')
-                        self.create_credit_note(row, bd)
-                    elif self.type_gp == 'contract_account':
-                        _logger.info('\nListado de Cuentas contrato\n')
-                        self.create_contract_account(row, bd)
+                        self.create_credit_note(row, municipality_id)
+                    # elif self.type_gp == 'contract_account':
+                    #     _logger.info('\nListado de Cuentas contrato\n')
+                    #     self.create_contract_account(row, municipality_id)
                     elif self.type_gp == 'debt':
                         _logger.info('\nListado de Deudas\n')
-                        self.create_debt(row, bd)
+                        self.create_debt(row, municipality_id)
                     # Guardar progreso
                     if progress == 100:
                         self.env.cr.commit()
@@ -269,26 +281,11 @@ class GP(models.Model):
         except Exception as e:
             _logger.info(f'\n¡Error de conexión! {e}\n')
 
-    def create_partner(self, data, bd):
+    def create_partner(self, data, municipality_id):
         """Creación de listado de clientes"""
-        if bd == 'baruta':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_BAR', raise_if_not_found=False)
-        elif bd == 'chacao':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_CHA', raise_if_not_found=False)
-        elif bd == 'hatillo':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_EHA', raise_if_not_found=False)
-        elif bd == 'iribarren':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_IRI', raise_if_not_found=False)
-        elif bd == 'maneiro':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_NVA_MAN', raise_if_not_found=False)
-        elif bd == 'jimenez':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_JIM', raise_if_not_found=False)
-        elif bd == 'san_diego':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_CAR_SAD', raise_if_not_found=False)
         _logger.info(f'\n{data}\n')
         name = re.sub(r"[^\sa-zA-Z0-9.-]", "", data[1].strip().upper())
         company_name = re.sub(r"[^\sa-zA-Z0-9.-]", "", data[2].strip().upper())
-        # municipality_id = data[6]
         phone = data[7].strip()
         mobile = data[8].strip()
         active = True if data[10].strip() == 'ACTIVO' else False
@@ -298,7 +295,8 @@ class GP(models.Model):
         partner_id = self.env['res.partner']
         values = {
             'name': name,
-            'company_name': company_name if vat[0] not in ['V', 'v', 'E', 'e'] else '',
+            'gp': True,
+            # 'company_name': company_name if vat[0] not in ['V', 'v', 'E', 'e'] else '',
             'vat': vat,
             'is_company': False if vat[0] in ['V', 'v', 'E', 'e'] else True,
             'company_type': 'person' if vat[0] in ['V', 'v', 'E', 'e'] else 'company',
@@ -330,22 +328,8 @@ class GP(models.Model):
                     'country_id': municipality_id.state_id.country_id.id,
                 })
 
-    def create_invoice(self, data, bd):
+    def create_invoice(self, data, municipality_id):
         """Creación de listado de facturas"""
-        if bd == 'baruta':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_BAR', raise_if_not_found=False)
-        elif bd == 'chacao':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_CHA', raise_if_not_found=False)
-        elif bd == 'hatillo':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_EHA', raise_if_not_found=False)
-        elif bd == 'iribarren':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_IRI', raise_if_not_found=False)
-        elif bd == 'maneiro':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_NVA_MAN', raise_if_not_found=False)
-        elif bd == 'jimenez':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_JIM', raise_if_not_found=False)
-        elif bd == 'san_diego':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_CAR_SAD', raise_if_not_found=False)
         _logger.info(f'\n{data}\n')
         partner_id = self.env['res.partner'].search(['&', ('vat', '=', data[0]), ('municipality_id', '=', municipality_id.id)])
         if partner_id:
@@ -394,22 +378,8 @@ class GP(models.Model):
                 move_id.payment_state = 'partial'
             return move_id
 
-    def create_proforma(self, data, bd):
+    def create_proforma(self, data, municipality_id):
         """Creación de listado de proformas"""
-        if bd == 'baruta':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_BAR', raise_if_not_found=False)
-        elif bd == 'chacao':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_CHA', raise_if_not_found=False)
-        elif bd == 'hatillo':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_EHA', raise_if_not_found=False)
-        elif bd == 'iribarren':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_IRI', raise_if_not_found=False)
-        elif bd == 'maneiro':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_NVA_MAN', raise_if_not_found=False)
-        elif bd == 'jimenez':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_JIM', raise_if_not_found=False)
-        elif bd == 'san_diego':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_CAR_SAD', raise_if_not_found=False)
         _logger.info(f'\n{data}\n')
         partner_id = self.env['res.partner'].search(['&', ('vat', '=', data[0]), ('municipality_id', '=', municipality_id.id)])
         if partner_id:
@@ -432,42 +402,29 @@ class GP(models.Model):
                 })
             else:
                 tax = tax.search([('type_tax_use', '=', 'sale'), ('amount', '=', iva)])
-            move_id = self.env['account.move'].create({
-                'name': numero_documento,
-                'partner_id': partner_id.id,
-                'move_type': 'out_invoice',
-                'invoice_date': invoice_date,
-                'numero_documento': numero_documento,
-                'proforma': True,
-                # 'invoice_date_due': invoice_date_due,
-                'invoice_date_due': False,
-                'contract': contract,
-                'period': period,
-                'invoice_line_ids': [(0, 0, {
-                    'product_id': self.env.ref('backov.product_test').id,
-                    'price_unit': amount,
-                    'tax_ids': [(4, tax.id)],
-                })]
-            })
-            move_id.name = numero_documento
-            return move_id
+            if not self.env['account.move'].search([('name', '=', numero_documento)]):
+                move_id = self.env['account.move'].create({
+                    'name': numero_documento,
+                    'partner_id': partner_id.id,
+                    'move_type': 'out_invoice',
+                    'invoice_date': invoice_date,
+                    'numero_documento': numero_documento,
+                    'proforma': True,
+                    # 'invoice_date_due': invoice_date_due,
+                    'invoice_date_due': False,
+                    'contract': contract,
+                    'period': period,
+                    'invoice_line_ids': [(0, 0, {
+                        'product_id': self.env.ref('backov.product_test').id,
+                        'price_unit': amount,
+                        'tax_ids': [(4, tax.id)],
+                    })]
+                })
+                move_id.name = numero_documento
+                return move_id
 
-    def create_credit_note(self, data, bd):
+    def create_credit_note(self, data, municipality_id):
         """Creación de listado de notas de crédito"""
-        if bd == 'baruta':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_BAR', raise_if_not_found=False)
-        elif bd == 'chacao':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_CHA', raise_if_not_found=False)
-        elif bd == 'hatillo':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_EHA', raise_if_not_found=False)
-        elif bd == 'iribarren':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_IRI', raise_if_not_found=False)
-        elif bd == 'maneiro':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_NVA_MAN', raise_if_not_found=False)
-        elif bd == 'jimenez':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_JIM', raise_if_not_found=False)
-        elif bd == 'san_diego':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_CAR_SAD', raise_if_not_found=False)
         _logger.info(f'\n{data}\n')
         partner_id = self.env['res.partner'].search(['&', ('vat', '=', data[0]), ('municipality_id', '=', municipality_id.id)])
         if partner_id:
@@ -480,42 +437,29 @@ class GP(models.Model):
             use = data[8]
             description = data[9]
             period = data[10]
-            move_id = self.env['account.move'].create({
-                'name': numero_documento,
-                'partner_id': partner_id.id,
-                'move_type': 'out_refund',
-                'invoice_date': invoice_date,
-                'numero_documento': numero_documento,
-                'invoice_date_due': invoice_date_due,
-                'use': use,
-                'description': description,
-                'contract': contract,
-                'period': period,
-                'invoice_line_ids': [(0, 0, {
-                    'product_id': self.env.ref('backov.product_test').id,
-                    'price_unit': amount,
-                    'tax_ids': False,
-                })]
-            })
-            move_id.name = numero_documento
-            return move_id
+            if not self.env['account.move'].search([('name', '=', numero_documento)]):
+                move_id = self.env['account.move'].create({
+                    'name': numero_documento,
+                    'partner_id': partner_id.id,
+                    'move_type': 'out_refund',
+                    'invoice_date': invoice_date,
+                    'numero_documento': numero_documento,
+                    'invoice_date_due': invoice_date_due,
+                    'use': use,
+                    'description': description,
+                    'contract': contract,
+                    'period': period,
+                    'invoice_line_ids': [(0, 0, {
+                        'product_id': self.env.ref('backov.product_test').id,
+                        'price_unit': amount,
+                        'tax_ids': False,
+                    })]
+                })
+                move_id.name = numero_documento
+                return move_id
 
-    def create_contract_account(self, data, bd):
+    def create_contract_account(self, data, municipality_id):
         """Creación de listado de cuentas contratos"""
-        if bd == 'baruta':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_BAR', raise_if_not_found=False)
-        elif bd == 'chacao':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_CHA', raise_if_not_found=False)
-        elif bd == 'hatillo':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_EHA', raise_if_not_found=False)
-        elif bd == 'iribarren':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_IRI', raise_if_not_found=False)
-        elif bd == 'maneiro':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_NVA_MAN', raise_if_not_found=False)
-        elif bd == 'jimenez':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_JIM', raise_if_not_found=False)
-        elif bd == 'san_diego':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_CAR_SAD', raise_if_not_found=False)
         _logger.info(f'\n{data}\n')
         partner_id = self.env['res.partner'].search(['&', ('vat', '=', data[5].vat), ('municipality_id', '=', municipality_id.id)])
         contract_id = self.env['account.contract']
@@ -544,22 +488,8 @@ class GP(models.Model):
             })
         return contract_id
 
-    def create_debt(self, data, bd):
+    def create_debt(self, data, municipality_id):
         """Creación de listado de deudas"""
-        if bd == 'baruta':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_BAR', raise_if_not_found=False)
-        elif bd == 'chacao':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_CHA', raise_if_not_found=False)
-        elif bd == 'hatillo':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_MIR_EHA', raise_if_not_found=False)
-        elif bd == 'iribarren':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_IRI', raise_if_not_found=False)
-        elif bd == 'maneiro':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_NVA_MAN', raise_if_not_found=False)
-        elif bd == 'jimenez':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_LAR_JIM', raise_if_not_found=False)
-        elif bd == 'san_diego':
-            municipality_id = self.env.ref('l10n_ve_dpt.mun_ve_CAR_SAD', raise_if_not_found=False)
         _logger.info(f'\n{data}\n')
         partner_id = self.env['res.partner'].search(['&', ('vat', '=', data[3].vat), ('municipality_id', '=', municipality_id.id)])
         debit_id = self.env['account.debit']

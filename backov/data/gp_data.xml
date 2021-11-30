@@ -32,4 +32,9 @@
             <field name="type">service</field>
         </record>
 	</data>
+	<data noupdate="0">
+		<record id="partner_stadistics" model="res.partner.stadistics">
+            <field name="name">ESTADÍSTICAS DE CLIENTES</field>
+        </record>
+	</data>
 </odoo>
