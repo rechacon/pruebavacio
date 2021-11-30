@@ -168,8 +168,8 @@ class GP(models.Model):
     def credentials_sqlserver(self, bd):
         """Credenciales de SQL SERVER"""
         _logger.info(f'\n\n======\nBD: {bd}\n======\n\n')
-        server = '10.161.0.32'
-        # server = '190.93.46.77'
+        # server = '10.161.0.32'
+        server = '190.93.46.77'
         name_bd = bd
         user = 'consultorsql'
         passwd = 'Sql01*'
