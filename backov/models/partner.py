@@ -12,6 +12,7 @@ class Partner(models.Model):
     state = fields.Selection([('without_suspending', 'Sin suspender'), ('suspending', 'Supendida')])
     count_proforma = fields.Integer(string='N° Proforma', compute='_compute_proforma')
     gp = fields.Boolean(string='GP', help='Contacto que viene de GP', default=False)
+    update = fields.Boolean(string='Actualizar', help='Contacto que con data errónea', default=False)
 
     @api.constrains('vat', 'country_id')
     def check_vat(self):
@@ -146,6 +147,38 @@ class Stadistics(models.Model):
             if (len(sucursal.name) > 3 and sucursal.vat[0].upper() in figure_fiscal
                 and len(sucursal.vat) >= 6 and len(sucursal.vat) <= 10 and sucursal.vat[1:].isdigit()):
                 self.count_sucursal_nice += 1
+
+    def update_mark(self):
+        """Actualizar marca de contacto"""
+        # partner_id = self.env['res.partner']
+        # contacts_ids = partner_id.search([('parent_id', '=', False)])
+        self._cr.execute("""SELECT id, vat, name FROM res_partner WHERE parent_id IS NULL""")
+        contacts_ids = self._cr.fetchall()
+        self._cr.execute("""SELECT id, vat, name FROM res_partner WHERE parent_id IS NOT NULL""")
+        sucursals_ids = self._cr.fetchall()
+        figure_fiscal = ['V', 'E', 'P', 'J', 'G', 'C']
+        for contact in contacts_ids:
+            id_contact = contact[0]
+            vat = contact[1]
+            name = contact[2]
+            if not name or not vat:
+                self._cr.execute(f"""UPDATE res_partner SET update=True WHERE id={id_contact};""")
+            elif not (len(name) > 3 and vat[0].upper() in figure_fiscal
+                and len(vat) >= 6 and len(vat) <= 10 and vat[1:].isdigit()):
+                self._cr.execute(f"""UPDATE res_partner SET update=True WHERE id={id_contact};""")
+            else:
+                self._cr.execute(f"""UPDATE res_partner SET update=False WHERE id={id_contact};""")
+        for sucursal in sucursals_ids:
+            id_sucursal = sucursal[0]
+            vat = sucursal[1]
+            name = sucursal[2]
+            if not name or not vat:
+                self._cr.execute(f"""UPDATE res_partner SET update=True WHERE id={id_sucursal};""")
+            elif not (len(name) > 3 and vat[0].upper() in figure_fiscal
+                and len(vat) >= 6 and len(vat) <= 10 and vat[1:].isdigit()):
+                self._cr.execute(f"""UPDATE res_partner SET update=True WHERE id={id_sucursal};""")
+            else:
+                self._cr.execute(f"""UPDATE res_partner SET update=False WHERE id={id_sucursal};""")
 
     def _compute_count_bad(self):
         """Contactos y sucursales incorrectos"""

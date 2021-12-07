@@ -10,6 +10,10 @@
                     <field name="state" widget="statusbar"/>
                 </header>
             </sheet>
+            <widget name="web_ribbon" position="before">
+                <field name="update" invisible="1"/>
+                <widget name="web_ribbon" title="Actualizar manualmente" bg_color="bg-danger" attrs="{'invisible': [('update', '=', False)]}"/>
+            </widget>
             <div name="button_box" position="inside">
                 <button class="oe_stat_button" type="object" name="action_view_proformas" icon="fa-list">
                     <field string="Proformas" name="count_proforma" widget="statinfo"/>
@@ -19,10 +23,28 @@
             </div>
         </field>
     </record>
+    <record id="view_partner_kanban_inherit_form" model="ir.ui.view">
+        <field name="name">res.partner.view.kanban.inherit.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.res_partner_kanban_view"/>
+        <field name="arch" type="xml">
+            <field name="country_id" position="after">
+                <field name="vat"/>
+                <field name="municipality_id"/>
+            </field>
+            <ul position="inside">
+                <t t-if="record.municipality_id.raw_value"><field name="municipality_id"/></t>
+                <t t-if="record.vat.raw_value"><field name="vat"/></t>
+            </ul>
+        </field>
+    </record>
     <record id="view_res_partner_filter" model="ir.ui.view">
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_res_partner_filter" />
         <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="vat" string="RIF/CI"/>
+            </field>
             <filter name="group_country" position="after">
                 <filter string="Estado" name="group_state" context="{'group_by': 'state_id'}"/>
                 <filter string="Municipio" name="group_municipality" context="{'group_by': 'municipality_id'}"/>
@@ -43,6 +65,9 @@
         <field name="model">res.partner.stadistics</field>
         <field name="arch" type="xml">
             <form string="Estadisticas">
+                <header>
+                    <button name="update_mark" type="object" class="btn-primary" string="Actualizar marca"/>
+                </header>
                 <sheet>
                     <h1><field name="name" readonly="1"/></h1>
                     <group>
